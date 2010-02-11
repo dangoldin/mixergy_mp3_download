@@ -1,7 +1,33 @@
 import os,sys,csv,urllib,time,re
 from BeautifulSoup import BeautifulSoup
-sys.path.append(os.path.realpath(__file__).rsplit('AlgoTools')[0][0:-1])
-from AlgoTools.objects import DataTable as DT
+
+base_url = 'http://www.melissadata.com/lookups/CountyZip.asp?fips=%s&submit1=Submit'
+
+def process_file(infile, outfile):
+    f = file(infile, 'r')
+    reader = csv.reader(f)
+
+    row = 0
+    all_fips = []
+    for line in reader:
+        if row == 0:
+            header = line
+        else:
+            (name,state_name,state_fips,cnty_fips,fips,area,fips_num) = line
+            all_fips.append(fips)
+        row += 1
+    f.close()
+
+    print all_fips
+    all_fips = all_fips[:2]
+
+    f = file(outfile,'w')
+    f.write("fips\tzip\tcity\tpercent\n")
+    for fips in all_fips:
+        results = get_fips_info( fips )
+        for result in results:
+            f.write(fips + "\t" + "\t".join(result)+"\n")
+    f.close()
 
 def get_fips_info(fips):
     url = base_url % fips
@@ -40,36 +66,12 @@ def get_fips_info(fips):
         
     return results
 
-f = file('/dev/geo_data/geo_data.csv','r')
-reader = csv.reader(f)
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    process_file( argv[1], argv[2] )
 
-base_url = 'http://www.melissadata.com/lookups/CountyZip.asp?fips=%s&submit1=Submit'
+if __name__ == '__main__':
+    main(sys.argv)
 
-row = 0
-all_fips = []
-for line in reader:
-    if row == 0:
-        header = line
-        #print header
-    else:
-        (name,state_name,state_fips,cnty_fips,fips,area,fips_num) = line
-        all_fips.append(fips)
-        #print line
-    row += 1
-f.close()
-
-print all_fips
-all_fips = all_fips[:2]
-
-f = file('/dev/geo_data/geo_data_out.csv','w')
-f.write("fips\tzip\tcity\tpercent\n")
-for fips in all_fips:
-    results = get_fips_info( fips )
-    for result in results:
-        f.write(fips + "\t" + "\t".join(result)+"\n")
-f.close()
-
-#fips = '27077'
-
-
-
+# python county_zips.py geo_data.csv geo_data_out.csv
